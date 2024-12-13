@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shape Drawer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: 20px auto;
+        }
+        textarea {
+            width: 80%;
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Draw Shapes</h1>
+    <p>Enter points in the format (x; y), separated by spaces. Use a new line to start a new shape.</p>
+    <textarea id="inputBox" placeholder="Example:100,100 200,200\n300,300 400,400 500,500"></textarea>
+    <canvas id="canvas" width="800" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function parsePoints(input) {
+            return input.trim().split('\n').map(line => {
+                return line.split(' ').map(point => {
+                    const match = point.match(/([-]?\d+),([-]?\d+)/);
+                    return match ? { x: parseInt(match[1]), y: parseInt(match[2]) } : null;
+                }).filter(p => p);
+            }).filter(line => line.length > 0);
+        }
+
+        function getRandomColor() {
+            return `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})`;
+        }
+
+        function scalePoints(points, width, height) {
+            const allPoints = points.flat();
+            const xs = allPoints.map(p => p.x);
+            const ys = allPoints.map(p => p.y);
+            const minX = Math.min(...xs);
+            const maxX = Math.max(...xs);
+            const minY = Math.min(...ys);
+            const maxY = Math.max(...ys);
+
+            const scaleX = width / (maxX - minX || 1);
+            const scaleY = height / (maxY - minY || 1);
+            const scale = Math.min(scaleX, scaleY);
+
+            return points.map(shape => shape.map(p => ({
+                x: (p.x - minX) * scale,
+                y: (p.y - minY) * scale
+            })));
+        }
+
+        function drawShapes() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const input = document.getElementById('inputBox').value;
+            let shapes = parsePoints(input);
+            shapes = scalePoints(shapes, canvas.width, canvas.height);
+
+            shapes.forEach(points => {
+                const color = getRandomColor();
+                ctx.strokeStyle = color;
+                ctx.fillStyle = color;
+
+                if (points.length === 1) {
+                    const { x, y } = points[0];
+                    ctx.beginPath();
+                    ctx.arc(x, y, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (points.length === 2) {
+                    ctx.beginPath();
+                    ctx.moveTo(points[0].x, points[0].y);
+                    ctx.lineTo(points[1].x, points[1].y);
+                    ctx.stroke();
+                } else if (points.length === 3) {
+                    ctx.beginPath();
+                    ctx.moveTo(points[0].x, points[0].y);
+                    ctx.lineTo(points[1].x, points[1].y);
+                    ctx.lineTo(points[2].x, points[2].y);
+                    ctx.closePath();
+                    ctx.stroke();
+                } else if (points.length === 4) {
+                    ctx.beginPath();
+                    ctx.moveTo(points[0].x, points[0].y);
+                    ctx.lineTo(points[1].x, points[1].y);
+                    ctx.lineTo(points[2].x, points[2].y);
+                    ctx.lineTo(points[3].x, points[3].y);
+                    ctx.closePath();
+                    ctx.stroke();
+                }
+            });
+        }
+
+        document.getElementById('inputBox').addEventListener('input', drawShapes);
+    </script>
+</body>
+</html>
